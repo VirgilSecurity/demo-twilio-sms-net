@@ -74,12 +74,23 @@ foreach (var personCards in peopleCards)
         }
     }
 }
-
 ```
+Lets look at the details:
+
+  - Next, we instantiate a new TwilioRestClient and Virgil ServiceHub REST clients.
+  - Next, we search for people's Public Keys and encrypt messages for them.
+  - Next, we encrypt the SMS message and prepare for sending the whole message or it's parts (depends on the message length).
+  - Next, we call the SendMessage method with the To, From and Body of the message.
+  
+If your REST request is successful, the SMS will successfully be queued for transmission. The SMS will be sent as soon as possible at a maximum rate of [1 message per second](https://www.twilio.com/faq/sms/) per 'From' phone number.
+ 
 ### Receive SMS Message
-Let's use Android device to receive an SMS message parts and decrypt.
+Let's use Android device to receive an SMS messages and decrypt them, becuase only there we are able to get access to SMS API.
 
 ```csharp
+// initialize the TinyCiper by setting a package length.
+var tinyCipher = new VirgilTinyCipher(120);
+
 private void OnSmsReceived(string from, string message)
 {
     this.tinyCipher.AddPackage(Convert.FromBase64String(message));
@@ -94,11 +105,3 @@ private void OnSmsReceived(string from, string message)
     }
 }
 ```
-
-Lets look at the details:
-
-  - Next, we instantiate a new TwilioRestClient and Virgil ServiceHub REST clients.
-  - Next, we search for people's Public Keys and encrypt messages for them.
-  - Next, we call the SendMessage method with the To, From and Body of the message.
-
-If your REST request is successful, the SMS will successfully be queued for transmission. The SMS will be sent as soon as possible at a maximum rate of [1 message per second](https://www.twilio.com/faq/sms/) per 'From' phone number.
