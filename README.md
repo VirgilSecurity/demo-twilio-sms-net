@@ -85,7 +85,7 @@ Lets look at the details:
 If your REST request is successful, the SMS will successfully be queued for transmission. The SMS will be sent as soon as possible at a maximum rate of [1 message per second](https://www.twilio.com/faq/sms/) per 'From' phone number.
  
 ### Receive SMS Message
-Let's use Android device to receive an SMS messages and decrypt them, becuase only there we are able to get access to SMS API.
+Let's use Android SMS API to receive an SMS messages and decrypt them.
 
 ```csharp
 // initialize the TinyCiper by setting a package length.
@@ -104,4 +104,6 @@ private void OnSmsReceived(string from, string message)
         Application.Current.MainPage.DisplayAlert($"From: {from}", decryptedMessage, "Got It");
     }
 }
+
+As you can see, it is really simple to send encrypted SMS messages using Twilio & Virgil. And it is not matter how long the original message is. They can be sent partially.
 ```
