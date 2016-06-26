@@ -15,8 +15,10 @@ PM> Install-Package Twilio
 
 I think it's time we threw a Star Wars party. We are going to invite our friends via SMS messages. We are serious about this event, so we're gonna send encrypted messages to make sure that only True people show up. Using Twilio & Virgil will make this task a piece of cake.
 
-### Initialization
+- First, head over to the Twilio website and log into your [Twilio Account page](https://www.twilio.com/user/account/). On the Dashboard near the top you will find your AccountSid and AuthToken. Copy those values and paste them into ```%TWILIO_ACCOUNT_SID%``` and ```%TWILIO_AUTH_TOKEN%``` placeholders.
+- Second, you have to create a free Virgil Security developer's account by signing up [here](https://developer.virgilsecurity.com/account/signup). Once you have your account you can [sign in](https://developer.virgilsecurity.com/account/signin) and generate an access token for your application. Paste it into  ```%VIRGIL_ACCESS_TOKEN%``` placeholder.
 
+### Initialization
 ```csharp
 // set our AccountSid and AuthToken
 string accountSid = "%TWILIO_ACCOUNT_SID%";
@@ -47,35 +49,54 @@ var peopleCards = await Task.WhenAll(people
             
 foreach (var personCards in peopleCards)
 {
-    // get latest person's card.
+    // get the latest person's card.
     var personCard = personCards.OrderBy(it => it.CreatedAt).Last();
     var personName = people[personCard.Identity.Value];
 
-    // Prepare package 
+    // initialize the TinyCiper by setting a package length.
     using (var tinyCipher = new VirgilTinyCipher(120))
     {
-        var message = $"Hey {personName}, here is your security code. We are waiting for you!";
+        var message = $"Hey {personName}, your security word is STAR. We are waiting for you!";
         var messageData = Encoding.UTF8.GetBytes(message);
-
+        
         tinyCipher.Encrypt(messageData, personCard.PublicKey.Value);
 
-        // gets the encrypted message from package.
-        var encryptedMessage = Convert.ToBase64String(tinyCipher.GetPackage(0));
-
-        // Send a new outgoing SMS by POSTing to the Messages resource
-        twilio.SendMessage(
-            SMS.Constants.TwilioPhoneNumber, // From number, must be an SMS-enabled Twilio number
-            personCard.Identity.Value,       // To person's phone number
-            encryptedMessage);
+        // gets an encrypted message part from the package.
+        for(int index = 0; index < tinyCipher.GetPackageCount(); index++)
+        {
+            var encryptedMessage = Convert.ToBase64String(tinyCipher.GetPackage(index));
+            
+            // Send an SMS message part using Twilio API client. 
+            twilio.SendMessage(
+                SMS.Constants.TwilioPhoneNumber, // From number, must be an SMS-enabled Twilio number
+                personCard.Identity.Value,       // To person's phone number
+                encryptedMessage);
+        }
     }
 }
 
 ```
+### Receive SMS Message
+Let's use Android device to receive an SMS message parts and decrypt.
+
+```csharp
+private void OnSmsReceived(string from, string message)
+{
+    this.tinyCipher.AddPackage(Convert.FromBase64String(message));
+    if (this.tinyCipher.IsPackagesAccumulated())
+    {
+        var decryptedData = this.tinyCipher.Decrypt(this.myPrivateKey);
+        var decryptedMessage = Encoding.UTF8.GetString(decryptedData, 0, decryptedData.Length);
+
+        this.tinyCipher.Reset();
+
+        Application.Current.MainPage.DisplayAlert($"From: {from}", decryptedMessage, "Got It");
+    }
+}
+```
 
 Lets look at the details:
 
-  - First, head over to the Twilio website and log into your [Twilio Account page](https://www.twilio.com/user/account/). On the Dashboard near the top you will find your AccountSid and AuthToken. Copy those values and paste them into ```%TWILIO_ACCOUNT_SID%``` and ```%TWILIO_AUTH_TOKEN%``` placeholders.
-  - Second, you must create a free Virgil Security developer's account by signing up [here](https://developer.virgilsecurity.com/account/signup). Once you have your account you can [sign in](https://developer.virgilsecurity.com/account/signin) and generate an access token for your application. Paste it into ```%VIRGIL_ACCESS_TOKEN%``` placeholder.
   - Next, we instantiate a new TwilioRestClient and Virgil ServiceHub REST clients.
   - Next, we search for people's Public Keys and encrypt messages for them.
   - Next, we call the SendMessage method with the To, From and Body of the message.
