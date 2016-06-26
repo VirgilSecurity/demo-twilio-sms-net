@@ -104,6 +104,6 @@ private void OnSmsReceived(string from, string message)
         Application.Current.MainPage.DisplayAlert($"From: {from}", decryptedMessage, "Got It");
     }
 }
+```
 
 As you can see, it is really simple to send encrypted SMS messages using Twilio & Virgil. And it is not matter how long the original message is. They can be sent partially.
-```
